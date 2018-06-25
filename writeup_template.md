@@ -41,13 +41,14 @@ Here is an example using the gray color space and HOG parameters of `orientation
 
 ![alt text][image2]
 
+
 #### 2. Explain how you settled on your final choice of HOG.
 
-I tried various combinations of parameters. The set used for the final results perfoms best: `orientation=9`, `pixels_per_cell=8`, and `cell_per_block=2`.
+I mainly focused on trying different orientation values by comparing the accuracies of the classifiers with different of them. The set used for the final results perfoms best: `orientation=11`, `pixels_per_cell=8`, and `cell_per_block=2`.
 
 #### 3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
-I trained a linear SVM using HOG features and color histogram features. The parameters for HOG features extraction is described above, and the parameters for color features are: `bin_spatial=16` and `histbin=16`.
+I trained a linear SVM using HOG features and color histogram features. The parameters for HOG features extraction is described above, and the parameters for color features are: `bin_spatial=16` and `histbin=32`.
 
 I first loaded all car and non-car images from the `vehicle` and `non-vehicle` and got all of the HOG and color features from them by using `extract_features` function in the sixth code cell of the IPython notebook. I then created array stacks of feature vectors and labels and split them into training and test data sets.
 After using `RobustScaler`, I fitted the training data set with `LinearSVC`, and got an accuracy of 0.9876 in the test data set.
@@ -56,24 +57,22 @@ After using `RobustScaler`, I fitted the training data set with `LinearSVC`, and
 
 #### 1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
-I tried different window postions with different scales in order to cover different sizes of cars in the image frame. The final window postions for 4 different scales are:
+I tried different window postions with different scales in order to cover cars of different distances in the image frame. The final window postions for 3 different scales are:
 
-    | scale   |   window position (pixel)  |
-    ---------------------------------------
-    |   1     |    360 - 550               |
-    ----------------------------------------
-    |   1.5   |    370 - 600               |
-    ----------------------------------------
-    |   2.0   |    370 - 656               |
-    ----------------------------------------
-    |   2.5   |    400 - 656               |
-    
-I used 2 cells_per_step in the car search function, which resulted in a search window overlap of 75%.
+    | scale   |   window position (pixel)  |  cells_per_step  |
+    -----------------------------------------------------------
+    |   0.8   |    410 - 480               |     1            |
+    -----------------------------------------------------------
+    |   1.5   |    400 - 550               |     2            |
+    -----------------------------------------------------------
+    |   2.0   |    400 - 620               |     2            |
 
 
 #### 2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
 
-Ultimately I searched on four scales using YCrCb 3-channel HOG features plus spatially binned color and histograms of color in the feature vector, which provided a nice result.  Here are some example images:
+Ultimately I searched on 3 scales using YCrCb 3-channel HOG features plus spatially binned color and histograms of color in the feature vector, which provided a nice result. To optimize the performance of my classifier, I tried to find the balance between good accuracy and computational efficiency. I tried different parameter sets, and the final one is:  `orientation=11`, `pixels_per_cell=8`, `cell_per_block=2`, `bin_spatial=16`, and `histbin=32`.
+
+Here are some example images of cars identification in the coloumn one of the plots below:
 
 ![alt text][image3]
 ---
@@ -87,7 +86,9 @@ Here's a [link to my video result](./project_video.mp4)
 #### 2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
 
 I recorded the positions of positive detections in each frame of the video.  From the positive detections I created a heatmap and then thresholded that map to identify vehicle positions.  I then used `scipy.ndimage.measurements.label()` to identify individual blobs in the heatmap.  I then assumed each blob corresponded to a vehicle.  I constructed bounding boxes to cover the area of each blob detected.  
-The third column images above show the results of false positives being filtered and bounding boxes for each car.  
+To filter false positives, I first used function `apply_threshold` to get off heated area with value less than 2. I then added up all heat map of current frame and previous 9 frames and did `apply_threshold` again to filter out noise which just show up accidently in single frame.
+
+The images in third column of the plot above show the results of false positives being filtered and labels of each car.  
 
 
 ---
@@ -96,5 +97,4 @@ The third column images above show the results of false positives being filtered
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-There are still some wobbly and unstable bounding boxes in the video, which might be caused by fause classifications. The pipeline also seems to fail to detect vehicles little far from the camera. The next step I will do is to try some other classifier like decision tree or deep learning method, or try to tune the parameters for `LinearSVC`.
-
+There are still some false positives and unstable bounding boxes in the video, which might be caused by false classifications. Becuase I don't have enough time right now, I will submit this version of video. The next step I will do is to try with some other threshold values for the heated map, and then try some other classifiers, like decision tree or deep learning method. Another thing is the computational efficiency of this pipeline is still not very good. It takes several seconds to work through one single frame, which is too much for real world driving. To solve this, one way is to use a better processor, and the other way is to improve the efficiency of the algorithm, which can be dug deeper in the futrue.
